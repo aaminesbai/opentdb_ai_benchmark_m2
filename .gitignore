@@ -1,4 +1,7 @@
-__pycache__/
-*.pyc
 .venv/
 venv/
+__pycache__/
+*.pyc
+data/silver/*.tmp.parquet
+data/silver/*.parquet
+.env
