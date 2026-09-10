@@ -5,3 +5,11 @@ __pycache__/
 data/silver/*.tmp.parquet
 data/silver/*.parquet
 .env
+
+# dbt
+dbt/logs/
+dbt/trivial_gold/target/
+dbt/trivial_gold/dbt_packages/
+
+# Base de données générée
+data/gold/*.duckdb
