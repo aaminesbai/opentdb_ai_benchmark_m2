@@ -6,3 +6,4 @@
 profiles.yml
 !models/
 !models/*.sql
+!streamlit_app.py

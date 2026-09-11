@@ -132,6 +132,24 @@ Gold :
 La commande `dbt run` crée ou met à jour `data/gold/gold.duckdb`. Elle doit être
 lancée après la génération du fichier Silver.
 
+## Rapport de benchmark avec Streamlit
+
+Le tableau de bord analyse la précision globale, les performances par catégorie,
+difficulté et type de question, ainsi que la distribution des temps de réponse et
+les erreurs techniques. Une vue de comparaison s'active automatiquement lorsque
+plusieurs modèles sont présents dans les données.
+
+Après avoir construit la couche Gold, lancer l'application depuis la racine :
+
+```powershell
+python -m pip install -r requirements.txt
+.\.venv\Scripts\streamlit.exe run streamlit_app.py
+```
+
+Streamlit ouvre ensuite le rapport dans le navigateur. Les filtres de la barre
+latérale permettent de limiter l'analyse à certains modèles, niveaux de difficulté
+ou catégories.
+
 ### Environnement Windows préparé et vérifications
 
 Un environnement `.venv` a été créé localement. Si `python` n'est pas dans le PATH,
