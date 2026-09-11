@@ -35,4 +35,4 @@ models:
     +materialized: view
 
 vars:
-  silver_path: "../../data/silver/questions_enriched.parquet"
+  silver_path: "data/silver/questions_enriched.parquet"

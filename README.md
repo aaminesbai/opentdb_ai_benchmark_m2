@@ -96,7 +96,41 @@ paramètres différents est refusée pour éviter de mélanger les mesures.
 
 Les requêtes passent uniquement par `requests` vers le serveur local, sans clé API,
 sans SDK OpenAI, sans proxy système et sans suivre les redirections.
-Cette étape ne crée pas de couche Gold ni de configuration dbt, DuckDB ou Streamlit.
+
+## Couche Gold avec dbt et DuckDB
+
+dbt lit le fichier Silver `data/silver/questions_enriched.parquet` et construit
+les vues d'analyse Gold dans une base DuckDB locale. Les modèles SQL se trouvent
+dans `models/` :
+
+- `stg_questions_enriched` : lecture de la couche Silver ;
+- `gold_accuracy_overall` : précision et latence globales ;
+- `gold_accuracy_by_category` : métriques par catégorie et difficulté ;
+- `gold_accuracy_by_difficulty` : métriques par difficulté.
+
+Créer un fichier `profiles.yml` à la racine du projet avec la configuration
+suivante :
+
+```yaml
+trivial_gold:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "data/gold/gold.duckdb"
+      threads: 4
+```
+
+Depuis la racine du projet, vérifier la configuration puis construire la couche
+Gold :
+
+```powershell
+.\.venv\Scripts\dbt.exe debug --profiles-dir .
+.\.venv\Scripts\dbt.exe run --profiles-dir .
+```
+
+La commande `dbt run` crée ou met à jour `data/gold/gold.duckdb`. Elle doit être
+lancée après la génération du fichier Silver.
 
 ### Environnement Windows préparé et vérifications
 

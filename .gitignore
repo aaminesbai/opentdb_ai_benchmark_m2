@@ -1,12 +1,8 @@
-.venv/
-venv/
-__pycache__/
-*.pyc
-# data/silver/*.tmp.parquet
-# data/silver/*.parquet
-.env
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
 
-# dbt
-dbt/logs/
-dbt/trivial_gold/target/
-dbt/trivial_gold/dbt_packages/
+# Keep the dbt project definition and its SQL models under version control.
+!dbt_project.yml
+profiles.yml
+!models/
+!models/*.sql
