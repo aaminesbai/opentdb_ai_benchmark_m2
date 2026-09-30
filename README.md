@@ -3,6 +3,68 @@
 Le Bronze contient les questions brutes OpenTDB. Le pipeline Silver nettoie ces
 questions, interroge un modèle local et conserve ses réponses et leur évaluation.
 
+## Architecture du projet
+
+Le projet suit une architecture en médaillon (Bronze → Silver → Gold) :
+
+```
+trivial-poursuite/
+├── data/
+│   ├── bronze/
+│   │   └── questions_raw.csv          # Questions brutes OpenTDB
+│   ├── silver/
+│   │   ├── questions_enriched.parquet         # Questions nettoyées + réponses IA
+│   │   └── questions_enriched_partial.parquet # Checkpoint de reprise
+│   └── gold/
+│       └── gold.duckdb                # Base DuckDB des analyses métier
+├── scripts/
+│   ├── scrape_opentdb.py              # Scraping OpenTDB (Bronze)
+│   ├── api_count.py                   # Vérification du nombre de questions par catégorie
+│   └── enrich_with_llm.py             # Enrichissement via LM Studio (Silver)
+├── models/                            # Modèles dbt (Gold)
+│   ├── stg_questions_enriched.sql
+│   ├── gold_accuracy_overall.sql
+│   ├── gold_accuracy_by_category.sql
+│   ├── gold_accuracy_by_difficulty.sql
+│   ├── gold_hardest_questions.sql
+│   └── gold_error_rate.sql
+├── tests/
+│   └── test_enrich_with_llm.py        # Tests unitaires (sans appel au modèle)
+├── streamlit_app.py                   # Dashboard interactif (rapport final)
+├── dbt_project.yml
+├── profiles.yml                       # Configuration de connexion dbt → DuckDB
+├── requirements.txt
+└── README.md
+```
+
+## Constitution du Bronze avec OpenTDB
+
+Le script `scripts/scrape_opentdb.py` récupère l'intégralité des questions
+disponibles sur [Open Trivia Database](https://opentdb.com) et les enregistre
+dans `data/bronze/questions_raw.csv`.
+
+Pour chaque catégorie, le nombre exact de questions disponibles est d'abord
+obtenu via `api_count.php`, puis les questions sont récupérées par paquets de
+50 maximum avec un jeton de session (`api_token.php`), afin d'éviter les
+doublons entre appels. Le rythme des requêtes respecte la limite d'une requête
+toutes les 5,2 secondes imposée par OpenTDB ; un code retour `5` (limite de
+débit atteinte) déclenche une nouvelle tentative automatique.
+
+Chaque ligne du Bronze conserve, en plus des champs natifs d'OpenTDB
+(catégorie, type, difficulté, question, bonne réponse, mauvaises réponses) :
+
+- `source` : toujours `OpenTDB` ;
+- `category_id` : l'identifiant numérique de la catégorie ;
+- `fetched_at` : l'horodatage UTC de récupération.
+
+```powershell
+python scripts/scrape_opentdb.py
+```
+
+Le script `scripts/api_count.py` permet, indépendamment, de vérifier le
+nombre de questions disponibles par catégorie sur OpenTDB — utile pour
+contrôler que le Bronze est complet.
+
 ## Enrichissement avec LM Studio
 
 1. Installer [LM Studio](https://lmstudio.ai/).
@@ -106,7 +168,12 @@ dans `models/` :
 - `stg_questions_enriched` : lecture de la couche Silver ;
 - `gold_accuracy_overall` : précision et latence globales ;
 - `gold_accuracy_by_category` : métriques par catégorie et difficulté ;
-- `gold_accuracy_by_difficulty` : métriques par difficulté.
+- `gold_accuracy_by_difficulty` : métriques par difficulté ;
+- `gold_hardest_questions` : questions pour lesquelles le modèle s'est trompé,
+  avec la réponse attendue et la réponse donnée, utile pour l'analyse
+  qualitative des erreurs ;
+- `gold_error_rate` : taux d'erreurs techniques (timeout, réponse invalide...)
+  par catégorie, distinct du taux de mauvaises réponses du modèle.
 
 Créer un fichier `profiles.yml` à la racine du projet avec la configuration
 suivante :
